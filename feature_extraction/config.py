@@ -14,19 +14,19 @@ paths = {
 }
 
 
-audio_feature_parameters = {
-    "number_of_mel_bands" : 40,
-    "window_len_in_seconds" : 0.025,
-    "window_hop_in_seconds" : 0.01,
-    "sr_target" : 16000
+audio_feature_params = {
+    "number_of_mel_bands" : 64,
+    "window_len_in_seconds" : 0.040,
+    "window_hop_in_seconds" : 0.020,
+    "sr_target" : 22050
     }
 
-text_feature_parameters = {
-    "text_feature_name" : "GN_negative300",
+text_feature_params = {
+    "pretrained_model" : "/../../model/word2vec/GoogleNews-vectors-negative300.bin",
     }
 
-action_parameters = {
-    "extracting_audio_features" : False,
+action_params = {
+    "extracting_audio_features" : True,
     "extracting_textual_features" : False,
-    "split" : "dev",
+    "split" : "validation",
     }
