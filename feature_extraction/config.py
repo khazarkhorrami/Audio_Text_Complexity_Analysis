@@ -22,11 +22,11 @@ audio_feature_params = {
     }
 
 text_feature_params = {
-    "pretrained_model" : "/../../model/word2vec/GoogleNews-vectors-negative300.bin",
+    "pretrained_model" : "bert", #"/../../model/word2vec/GoogleNews-vectors-negative300.bin",
     }
 
 action_params = {
-    "extracting_audio_features" : True,
-    "extracting_textual_features" : False,
+    "extracting_audio_features" : False,
+    "extracting_textual_features" : True,
     "split" : "validation",
     }

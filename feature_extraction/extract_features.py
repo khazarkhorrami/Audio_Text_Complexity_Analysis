@@ -3,8 +3,8 @@
 
 """
 import config as cfg
-from utils import calculate_logmels, serialize_features
-
+from utils import calculate_logmels, serialize_features, bert_vectors
+from data_preprocessing import get_captions_dictionary
 import os
 
 
@@ -60,10 +60,23 @@ class Features:
       
     def extract_textual_features(self):
         
-        self.read_data_paths() 
-        os.makedirs(self.feature_path_captions , exist_ok= True)
-        self.pretrained_text_model
-
+        self.read_data_paths()
+        if self.dataset_name == "clotho":
+            
+            feature_fullpath = os.path.join(self.feature_path_captions, self.split)  
+            os.makedirs(feature_fullpath, exist_ok= True)
+            
+            all_captions_dictionaries = get_captions_dictionary (self.caption_path)
+            vectors_bert_all = []
+            if self.pretrained_text_model == "bert":
+                for wav_name in all_captions_dictionaries:
+                    list_of_sentences = all_captions_dictionaries[wav_name]
+                    vectors_bert = bert_vectors (list_of_sentences)
+                    vectors_bert_all.append(vectors_bert)
+                    # save_name = wav_name[0:-4]               
+                    # self.save_features(vectors_bert, feature_fullpath , save_name)
+        
+        return all_captions_dictionaries, vectors_bert_all
     
     def find_logmel_features(self, wavfile):
         logmel_feature = calculate_logmels (wavfile , self.number_of_mel_bands , self.window_len_in_seconds , self.window_hop_in_seconds , self.sr_target)
