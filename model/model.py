@@ -12,9 +12,9 @@ class VGS:
     def __init__(self):
         pass
 
-    def build_audio_model (self, input_dim): 
+    def build_residual_audio_model (self, input_dim): 
         [Xshape, Yshape] = self.input_dim
-        speech_sequence = Input(shape=Xshape) #Xshape = (512, 40)
+        speech_sequence = Input(shape=Xshape) #Xshape = (1024,64)
   
         # speech channel
         
@@ -76,8 +76,8 @@ class VGS:
         return speech_sequence , out_speech_channel , audio_model 
     
           
-    def build_simple_audio_model (self , input_dim):
-        
+    def build_audio_model (self , input_dim):
+        #Xshape = (1024,64)
         [Xshape, Yshape] = self.input_dim
         dropout_size = 0.3
         activation_C='relu'
@@ -87,8 +87,10 @@ class VGS:
         forward1 = Conv1D(128,5,padding="same",activation=activation_C,name = 'conv1')(audio_sequence)
         dr1 = Dropout(dropout_size)(forward1)
         bn1 = BatchNormalization(axis=-1)(dr1)
-           
-        forward2 = Conv1D(256,11,padding="same",activation=activation_C,name = 'conv2')(bn1)
+        
+        pool1 = MaxPooling1D(3,strides = 2, padding='same')(bn1)
+        
+        forward2 = Conv1D(256,11,padding="same",activation=activation_C,name = 'conv2')(pool1)
         dr2 = Dropout(dropout_size)(forward2)
         bn2 = BatchNormalization(axis=-1)(dr2)
          
@@ -115,40 +117,41 @@ class VGS:
         return audio_sequence , out_audio_channel , audio_model
     
         
-    def build_visual_model (self, input_dim):
-        # Yshape = (14, 14, 512)
+    def build_textual_model (self, input_dim):
+        # Yshape = (768)
         [Xshape, Yshape] = self.input_dim
-        dropout_size = 0.3
-        visual_sequence = Input(shape=Yshape)
         
-        visual_sequence_norm = BatchNormalization(axis=-1, name = 'bn0_visual')(visual_sequence)
+        textual_sequence = Input(shape=Yshape)
         
-        forward_visual = Conv2D(512,(3,3),strides=(1,1),padding = "same", activation='linear', name = 'conv_visual')(visual_sequence_norm)
-        dr_visual = Dropout(dropout_size,name = 'dr_visual')(forward_visual)
-        bn_visual = BatchNormalization(axis=-1,name = 'bn1_visual')(dr_visual)
+        #textual_sequence_norm = BatchNormalization(axis=0, name = 'bn0_textual')(textual_sequence)
         
-        resh1 = Reshape([196,512],name='reshape_visual')(bn_visual) 
+        # dropout_size = 0.3
+        # forward_textual = Conv1D(512,3,strides=1,padding = "same", activation='linear', name = 'conv_textual')(textual_sequence_norm)
+        # dr_textual = Dropout(dropout_size,name = 'dr_textual')(forward_textual)
+        # bn_textual = BatchNormalization(axis=-1,name = 'bn1_textual')(dr_textual)
+        # pool_textual = MaxPooling1D(3,strides = 2,padding='same')(bn_textual)
         
-        out_visual_channel = resh1 # (N, 196,512)
-        visual_model = Model(inputs= visual_sequence, outputs = out_visual_channel )
-        return visual_sequence , out_visual_channel , visual_model
+        
+        out_textual_channel = textual_sequence
+        textual_model = Model(inputs= textual_sequence, outputs = out_textual_channel )
+        return textual_sequence , out_textual_channel , textual_model
    
 
-    def CNNatt (self , model_subname , input_dim):
+    def CNNatt (self , input_dim):
         #input_dim = [(512, 40), (14, 14, 512)]
         speech_sequence , out_speech_channel , audio_model = self.build_audio_model (input_dim)
-        visual_sequence , out_visual_channel , visual_model = self. build_visual_model ( input_dim)          
+        textual_sequence , out_textual_channel , textual_model = self. build_textual_model ( input_dim)          
         
         A = out_speech_channel
-        I = out_visual_channel
+        I = out_textual_channel
         
-        visual_embedding_model = Model(inputs=visual_sequence, outputs = I, name='visual_embedding_model')
+        textual_embedding_model = Model(inputs=textual_sequence, outputs = I, name='textual_embedding_model')
         audio_embedding_model = Model(inputs= speech_sequence, outputs = A, name='audio_embedding_model')  
         
         #### Attention I for query Audio
         # checks which part of image gets more attention based on audio query.   
-        keyImage = out_visual_channel
-        valueImage = out_visual_channel
+        keyImage = out_textual_channel
+        valueImage = out_textual_channel
         queryAudio = out_speech_channel
         
         scoreI = keras.layers.dot([queryAudio,keyImage], normalize=False, axes=-1,name='scoreI')
@@ -171,7 +174,7 @@ class VGS:
         # checks which part of audio gets more attention based on image query.
         keyAudio = out_speech_channel
         valueAudio = out_speech_channel
-        queryImage = out_visual_channel
+        queryImage = out_textual_channel
         
         scoreA = keras.layers.dot([queryImage,keyAudio], normalize=False, axes=-1,name='scoreA')
         weightAD = Dense(64,activation='sigmoid')(scoreA)
@@ -189,44 +192,43 @@ class VGS:
         outAttImage = Concatenate(axis=-1)([poolAttA,poolAttAD, poolqueryImage])
         outAttImage = Reshape([1536],name='reshape_out_attImage') (outAttImage)
         
-        # combining audio and visual channels 
+        # combining audio and textual channels 
         
         A_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_audio')(outAttAudio)
-        I_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_visual')(outAttImage)
+        I_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_textual')(outAttImage)
         
         
         if self.loss == "Triplet":
             mapIA = keras.layers.dot([I_e,A_e],axes=-1,normalize = True,name='dot_final')
-            final_model = Model(inputs=[visual_sequence, speech_sequence], outputs = mapIA , name='vgs_model')
+            final_model = Model(inputs=[textual_sequence, speech_sequence], outputs = mapIA , name='vgs_model')
             
         elif self.loss == "MMS":
             s_output = Concatenate(axis=1)([Reshape([1 , I_e.shape[1]])(I_e) ,  Reshape([1 ,A_e.shape[1]])(A_e)])
-            final_model = Model(inputs=[visual_sequence,  speech_sequence], outputs = s_output )
+            final_model = Model(inputs=[textual_sequence,  speech_sequence], outputs = s_output )
     
-        return final_model, visual_embedding_model, audio_embedding_model 
+        return final_model, textual_embedding_model, audio_embedding_model 
          
-    def CNN0 (self, model_subname, input_dim):
+    def CNN0 (self, input_dim):
     
-        #input_dim = [(512, 40), (14, 14, 512)]
-        speech_sequence , out_speech_channel , audio_model = self.build_audio_model ( input_dim)
-        visual_sequence , out_visual_channel , visual_model = self. build_visual_model ( input_dim)  
+        #input_dim = [(1024, 64), (1,768)]
+        audio_sequence , out_audio_channel , audio_model = self.build_audio_model ( input_dim)
+        textual_sequence , out_textual_channel , textual_model = self. build_textual_model ( input_dim)  
         
         
-        I = AveragePooling1D(512,padding='same') (out_visual_channel)
-        I = Reshape([out_speech_channel.shape[2]])(I) # (N, 512)
+        T =  out_textual_channel #AveragePooling1D(64,padding='same') (out_textual_channel)
+        #T = Reshape([out_textual_channel.shape[2]])(T) # (N, 512)
         
-        A = AveragePooling1D(512,padding='same') (out_speech_channel)
-        A = Reshape([out_speech_channel.shape[2]])(A) # (N, 512)
+        A = AveragePooling1D(64,padding='same') (out_audio_channel)
+        A = Reshape([out_audio_channel.shape[2]])(A) # (N, 512)
          
         A_e = Dense(512,activation='linear',name='dense_audio')(A)       
         #A = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_audio')(A)
         
-        I_e = Dense(512,activation='linear',name='dense_visual')(I) 
-        #I = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_visual')(I)
+        T_e = Dense(512,activation='linear',name='dense_textual')(T) 
+        #I = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_textual')(I)
         
-        
-        visual_embedding_model = Model(inputs=visual_sequence, outputs = I_e, name='visual_embedding_model')
-        audio_embedding_model = Model(inputs= speech_sequence, outputs = A_e, name='audio_embedding_model')  
+        textual_embedding_model = Model(inputs=textual_sequence, outputs = T_e, name='textual_embedding_model')
+        audio_embedding_model = Model(inputs= audio_sequence, outputs = A_e, name='audio_embedding_model')  
         
         if self.loss == "Triplet":
             # mapIA = keras.layers.dot([I,A],axes=-1,normalize = True,name='dot_matchmap') 
@@ -236,26 +238,26 @@ class VGS:
             #     output_score = Reshape([1],name='reshape_final')(score)          
             #     return output_score
             # lambda_layer = Lambda(final_layer, name="final_layer")(mapIA)
-            # final_model = Model(inputs=[visual_sequence, speech_sequence], outputs = lambda_layer )
+            # final_model = Model(inputs=[textual_sequence, speech_sequence], outputs = lambda_layer )
             
-            mapIA = dot([I_e,A_e],axes=-1,normalize = True,name='dot_matchmap')       
-            final_model = Model(inputs=[visual_sequence, speech_sequence], outputs = mapIA )
+            mapTA = dot([T_e,A_e],axes=-1,normalize = True,name='dot_matchmap')       
+            final_model = Model(inputs=[textual_sequence, audio_sequence], outputs = mapTA )
             
         elif self.loss == "MMS":
-            s_output = Concatenate(axis=1)([Reshape([1 , I_e.shape[1]])(I_e) ,  Reshape([1 ,A_e.shape[1]])(A_e)])
-            final_model = Model(inputs=[visual_sequence,  speech_sequence], outputs = s_output )
-        return final_model, visual_embedding_model, audio_embedding_model
+            s_output = Concatenate(axis=1)([Reshape([1 , T_e.shape[1]])(T_e) ,  Reshape([1 ,A_e.shape[1]])(A_e)])
+            final_model = Model(inputs=[textual_sequence,  audio_sequence], outputs = s_output )
+        return final_model, textual_embedding_model, audio_embedding_model
   
-        return  final_model, visual_embedding_model, audio_embedding_model   
+        return  final_model, textual_embedding_model, audio_embedding_model   
           
-    def build_model (self, model_name, model_subname, input_dim): 
+    def build_model (self, model_name, input_dim): 
             
         if model_name == 'CNN0':
-            final_model, visual_embedding_model, audio_embedding_model = self.CNN0(model_subname , input_dim)
+            final_model, textual_embedding_model, audio_embedding_model = self.CNN0(input_dim)
         elif model_name == 'CNNatt':
-            final_model, visual_embedding_model, audio_embedding_model = self.CNNatt(model_subname , input_dim)
+            final_model, textual_embedding_model, audio_embedding_model = self.CNNatt( input_dim)
     
-        return final_model, visual_embedding_model, audio_embedding_model         
+        return final_model, textual_embedding_model, audio_embedding_model         
     
 
     

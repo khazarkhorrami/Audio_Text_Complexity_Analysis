@@ -3,19 +3,25 @@
 
 
 paths = {
-  "feature_path_SPOKENCOCO": "/run/media/hxkhkh/khazar_data_1/khazar/features/coco/SPOKEN-COCO/" , #"../../features/SPOKEN-COCO/",
-  "feature_path_MSCOCO": "/run/media/hxkhkh/khazar_data_1/khazar/features/coco/MSCOCO/" , #"../../features/MSCOCO/",
-  "json_path_SPOKENCOCO" : "../../data/SPOKEN-COCO/",
-  "dataset_name" : "SPOKEN-COCO",
+    
+  "dataset_name" : "clotho",
+  
+  "path_clotho_audio": "../../data/clotho/audio/",
+  "path_clotho_captions" : "../../data/clotho/captions/",
+  "path_clotho_meta" : "../../data/clotho/metadata/",
+
+  "feature_path_audio": "../../features/clotho/audio",
+  "feature_path_captions": "../../features/clotho/captions", 
+  
   "modeldir": "../../model/model00/",
 }
 
 
 action_parameters = {
   "use_pretrained": False,
-  "training_mode": False,
+  "training_mode": True,
   "evaluating_mode": True,
-  "save_model":True,
+  "save_model":False,
   "save_best_recall" : True,
   "save_best_loss" : False,
   "find_recall" : True,
@@ -24,9 +30,8 @@ action_parameters = {
 }
 
 feature_settings = {
-    "model_name": "CNNatt",
-    "model_subname": "v0",
-    "length_sequence" : 512,
-    "Xshape" : (512,40),
-    "Yshape" : (14,14,512)
+    "model_name": "CNN0",   
+    "length_sequence" : 1024,
+    "Xshape" : (1024,64),
+    "Yshape" : (768)
     }

@@ -63,11 +63,9 @@ def calculate_logmels (wavfile , number_of_mel_bands , window_len , window_hop ,
 # vectors_w2v = vectorizer.vectors
 
 
-
-
 def bert_vectors (list_of_sentences):
     
-    
+    vectorizer.vectors = []
     vectors = vectorizer.run(list_of_sentences)
     vectors = vectorizer.vectors
     vectors_bert = numpy.array(vectors)

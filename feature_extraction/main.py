@@ -1,4 +1,5 @@
 from extract_features import Features
 
 feature_extractor = Features()
-all_captions_dictionaries, test = feature_extractor.extract_textual_features()
+feature_extractor()
+#all_captions_dictionaries, vectors_bert_all = feature_extractor.extract_textual_features()

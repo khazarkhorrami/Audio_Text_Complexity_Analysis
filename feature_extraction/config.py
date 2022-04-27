@@ -28,5 +28,5 @@ text_feature_params = {
 action_params = {
     "extracting_audio_features" : False,
     "extracting_textual_features" : True,
-    "split" : "validation",
+    "split" : "development",
     }

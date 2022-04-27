@@ -39,7 +39,7 @@ class Features:
         filename = os.path.join(feature_fullpath, save_name)
         serialize_features (input_file, filename)
         
-    def read_data_paths (self):
+    def set_data_paths (self):
        
        if self.dataset_name == 'clotho':
            
@@ -58,9 +58,8 @@ class Features:
                self.caption_path = os.path.join( self.path_clotho_captions , "clotho_captions_validation.csv") 
                self.meta_path =  os.path.join(self.path_clotho_meta , "clotho_metadata_validation.csv")
       
-    def extract_textual_features(self):
-        
-        self.read_data_paths()
+    def extract_textual_features(self):     
+        self.set_data_paths()
         if self.dataset_name == "clotho":
             
             feature_fullpath = os.path.join(self.feature_path_captions, self.split)  
@@ -73,10 +72,10 @@ class Features:
                     list_of_sentences = all_captions_dictionaries[wav_name]
                     vectors_bert = bert_vectors (list_of_sentences)
                     vectors_bert_all.append(vectors_bert)
-                    # save_name = wav_name[0:-4]               
-                    # self.save_features(vectors_bert, feature_fullpath , save_name)
+                    save_name = wav_name[0:-4]               
+                    self.save_features(vectors_bert, feature_fullpath , save_name)
         
-        return all_captions_dictionaries, vectors_bert_all
+        #return all_captions_dictionaries, vectors_bert_all
     
     def find_logmel_features(self, wavfile):
         logmel_feature = calculate_logmels (wavfile , self.number_of_mel_bands , self.window_len_in_seconds , self.window_hop_in_seconds , self.sr_target)
@@ -84,7 +83,7 @@ class Features:
     
      
     def extract_audio_features (self):
-        self.read_data_paths()
+        self.set_data_paths()
         
         if self.dataset_name == "clotho":
             
@@ -105,6 +104,6 @@ class Features:
         if self.extracting_audio_features:
             self.extract_audio_features()
         elif self.extracting_textual_features:
-            self.extract_visual_features()
+            self.extract_textual_features()
             
             
