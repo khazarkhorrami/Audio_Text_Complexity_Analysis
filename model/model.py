@@ -1,10 +1,11 @@
-
+# model00 : similaro to simple VGS network
+# model01 : upgraded CNN network
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import  Input, Reshape, Dense, Dropout, BatchNormalization
-from tensorflow.keras.layers import  MaxPooling1D,  Conv1D,Conv2D, ReLU, Add
+from tensorflow.keras.layers import  MaxPooling1D, MaxPooling2D, Conv1D,Conv2D, ReLU, Add
 from tensorflow.keras.layers import Softmax, Permute, AveragePooling1D, Concatenate, dot
 
 class VGS:
@@ -79,39 +80,41 @@ class VGS:
     def build_audio_model (self , input_dim):
         #Xshape = (1024,64)
         [Xshape, Yshape] = self.input_dim
+        
         dropout_size = 0.3
         activation_C='relu'
     
         audio_sequence = Input(shape=Xshape)
-          
-        forward1 = Conv1D(128,5,padding="same",activation=activation_C,name = 'conv1')(audio_sequence)
+        audio_sequence_extended =  Reshape([audio_sequence.shape[1],audio_sequence.shape[2], 1 ])(audio_sequence) 
+        forward1 = Conv2D(32,3,padding="same",activation=activation_C,name = 'conv1')(audio_sequence_extended)
         dr1 = Dropout(dropout_size)(forward1)
         bn1 = BatchNormalization(axis=-1)(dr1)
         
-        pool1 = MaxPooling1D(3,strides = 2, padding='same')(bn1)
+        pool1 = MaxPooling2D(4,strides = 2, padding='same')(bn1)
         
-        forward2 = Conv1D(256,11,padding="same",activation=activation_C,name = 'conv2')(pool1)
+        forward2 = Conv2D(32,3,padding="same",activation=activation_C,name = 'conv2')(pool1)
         dr2 = Dropout(dropout_size)(forward2)
         bn2 = BatchNormalization(axis=-1)(dr2)
          
-        pool2 = MaxPooling1D(3,strides = 2, padding='same')(bn2)
+        pool2 = MaxPooling2D(4,strides = 2, padding='same')(bn2)
           
-        forward3 = Conv1D(256,17,padding="same",activation=activation_C,name = 'conv3')(pool2)
+        forward3 = Conv2D(64,5,padding="same",activation=activation_C,name = 'conv3')(pool2)
         dr3 = Dropout(dropout_size)(forward3)
         bn3 = BatchNormalization(axis=-1)(dr3) 
         
-        pool3 = MaxPooling1D(3,strides = 2,padding='same')(bn3)
+        pool3 = MaxPooling2D(4,strides = 2,padding='same')(bn3)
           
-        forward4 = Conv1D(512,17,padding="same",activation=activation_C,name = 'conv4')(pool3)
+        forward4 = Conv2D(128,7,padding="same",activation=activation_C,name = 'conv4')(pool3)
         dr4 = Dropout(dropout_size)(forward4)
         bn4 = BatchNormalization(axis=-1)(dr4) 
-        pool4 = MaxPooling1D(3,strides = 2,padding='same')(bn4)
+        pool4 = MaxPooling2D(4,strides = 2,padding='same')(bn4)
            
-        forward5 = Conv1D(512,17,padding="same",activation=activation_C,name = 'conv5')(pool4)
+        forward5 = Conv2D(256,7,padding="same",activation=activation_C,name = 'conv5')(pool4)
         dr5 = Dropout(dropout_size)(forward5)
         bn5 = BatchNormalization(axis=-1,name='audio_branch')(dr5) # (N,64,512)
+        pool5 = MaxPooling2D(4,strides = 4,padding='same')(bn5)
         
-        out_audio_channel = bn5 
+        out_audio_channel = Reshape([pool5.shape[1], pool5.shape[3]]) (pool5)
         audio_model = Model(inputs= audio_sequence, outputs = out_audio_channel )
         
         return audio_sequence , out_audio_channel , audio_model
@@ -222,10 +225,10 @@ class VGS:
         A = Reshape([out_audio_channel.shape[2]])(A) # (N, 512)
          
         A_e = Dense(512,activation='linear',name='dense_audio')(A)       
-        #A = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_audio')(A)
+        A_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_audio')(A_e)
         
         T_e = Dense(512,activation='linear',name='dense_textual')(T) 
-        #I = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_textual')(I)
+        T_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_textual')(T_e)
         
         textual_embedding_model = Model(inputs=textual_sequence, outputs = T_e, name='textual_embedding_model')
         audio_embedding_model = Model(inputs= audio_sequence, outputs = A_e, name='audio_embedding_model')  

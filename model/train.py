@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from tensorflow import keras
 from data_preprocessing import prepare_XY , get_captions_dictionary , load_data
-from utils import  prepare_triplet_data ,  triplet_loss , prepare_MMS_data , mms_loss, calculate_recallat10
+from utils import  prepare_triplet_data ,  triplet_loss , prepare_MMS_data , mms_loss, calculate_recallat
 from model import VGS
 import config as cfg
     
@@ -141,7 +141,7 @@ class train_validate (VGS):
                     
         
     def train_model(self): 
-        self.split = 'evaluation'
+        self.split = 'development'
         self.set_data_paths()
         
         for capID in range(5):
@@ -153,13 +153,13 @@ class train_validate (VGS):
             if self.loss == "Triplet":                   
                 Yin, Xin, bin_target = prepare_triplet_data (Ydata, Xdata)
                     
-            history = self.vgs_model.fit([Yin, Xin ], bin_target, shuffle=False, epochs=1,batch_size=120)                      
+            history = self.vgs_model.fit([Yin, Xin ], bin_target, shuffle=False, epochs=1,batch_size=30)                      
             del Yin, Xin, Ydata, Xdata
             training_output = history.history['loss'][0]
         return training_output
 
     def evaluate_model (self) :
-        self.split = 'validation'
+        self.split = 'evaluation'
         self.set_data_paths()
 
         epoch_cum_val = 0
@@ -175,7 +175,7 @@ class train_validate (VGS):
             if self.loss == "Triplet":                   
                 Yin, Xin, bin_target = prepare_triplet_data (Ydata, Xdata)
                 
-            loss = self.vgs_model.evaluate([Yin, Xin ], bin_target, batch_size=120) 
+            loss = self.vgs_model.evaluate([Yin, Xin ], bin_target, batch_size=30) 
             epoch_cum_val += loss
             #............................................................. Recall
             if self.find_recall:
@@ -191,14 +191,16 @@ class train_validate (VGS):
                     visual_embeddings_mean = numpy.mean(visual_embeddings, axis = 1)
                     audio_embeddings_mean = numpy.mean(audio_embeddings, axis = 1)
                 ########### calculating Recall@10                    
-                poolsize =  1000
-                number_of_trials = 100
-                recall_av_vec = calculate_recallat10( audio_embeddings_mean, visual_embeddings_mean, number_of_trials,  number_of_samples , poolsize )          
-                recall_va_vec = calculate_recallat10( visual_embeddings_mean , audio_embeddings_mean, number_of_trials,  number_of_samples , poolsize ) 
-                recall10_av = numpy.mean(recall_av_vec)/(poolsize)
-                recall10_va = numpy.mean(recall_va_vec)/(poolsize)
-                epoch_cum_recall_av += recall10_av
-                epoch_cum_recall_va += recall10_va               
+                poolsize =  number_of_samples
+                number_of_trials = 2
+                recall_av_vec = calculate_recallat( audio_embeddings_mean, visual_embeddings_mean, number_of_trials,  number_of_samples , poolsize )          
+                recall_va_vec = calculate_recallat( visual_embeddings_mean , audio_embeddings_mean, number_of_trials,  number_of_samples , poolsize ) 
+                recall_av = numpy.mean(recall_av_vec)/(poolsize)
+                print(recall_av)
+                recall_va = numpy.mean(recall_va_vec)/(poolsize)
+                print(recall_va)
+                epoch_cum_recall_av += recall_av
+                epoch_cum_recall_va += recall_va               
                 del Xdata, audio_embeddings
                 del Ydata, visual_embeddings            
             del Xin, Yin
@@ -248,7 +250,7 @@ class train_validate (VGS):
     def make_plot (self, plot_lists):
         
         plt.figure()
-        plot_names = ['training loss','validation loss','speech_to_image recall','image_to_speech recall']
+        plot_names = ['training loss','validation loss','audio_to_text','text_to_audio']
         for plot_counter, plot_value in enumerate(plot_lists):
             plt.subplot(2,2,plot_counter+1)
             plt.plot(plot_value)
@@ -260,9 +262,9 @@ class train_validate (VGS):
     def define_and_compile_models (self):
         self.vgs_model, self.visual_embedding_model, self.audio_embedding_model = self.build_model(self.model_name, self.input_dim)
         if self.loss == "MMS":
-            self.vgs_model.compile(loss=mms_loss, optimizer= keras.optimizers.Adam(lr=1e-04))
+            self.vgs_model.compile(loss=mms_loss, optimizer= keras.optimizers.Adam(lr=1e-03))
         elif self.loss == "Triplet":
-            self.vgs_model.compile(loss=triplet_loss, optimizer= keras.optimizers.Adam(lr=1e-04))
+            self.vgs_model.compile(loss=triplet_loss, optimizer= keras.optimizers.Adam(lr=1e-03))
         print(self.vgs_model.summary())
         
     def __call__(self):

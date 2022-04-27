@@ -52,7 +52,7 @@ def triplet_loss(y_true,y_pred):
     Sc = y_pred[2::3]      
     return K.sum(K.maximum(0.0,(Sc-Sp + margin )) + K.maximum(0.0,(Si-Sp + margin )),  axis=0) 
 
-def calculate_recallat10( embedding_1,embedding_2, sampling_times, number_of_all_audios, pool):   
+def calculate_recallat( embedding_1,embedding_2, sampling_times, number_of_all_audios, pool):   
     recall_all = []
     recallat = 10  
     for trial_number in range(sampling_times):      

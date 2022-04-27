@@ -13,19 +13,19 @@ paths = {
   "feature_path_audio": "../../features/clotho/audio",
   "feature_path_captions": "../../features/clotho/captions", 
   
-  "modeldir": "../../model/model00/",
+  "modeldir": "../../model/model01/",
 }
 
 
 action_parameters = {
-  "use_pretrained": False,
+  "use_pretrained": True,
   "training_mode": True,
   "evaluating_mode": True,
-  "save_model":False,
+  "save_model":True,
   "save_best_recall" : True,
   "save_best_loss" : False,
   "find_recall" : True,
-  "number_of_epochs" : 100,
+  "number_of_epochs" : 20,
   "chunk_length":10000
 }
 
