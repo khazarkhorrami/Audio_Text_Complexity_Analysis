@@ -5,8 +5,8 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import  Input, Reshape, Dense, Dropout, BatchNormalization
-from tensorflow.keras.layers import  MaxPooling1D, MaxPooling2D, Conv1D,Conv2D, ReLU, Add
-from tensorflow.keras.layers import Softmax, Permute, AveragePooling1D, Concatenate, dot
+from tensorflow.keras.layers import  MaxPooling1D, MaxPooling2D, Conv1D,Conv2D, ReLU, Add, GRU, Bidirectional
+from tensorflow.keras.layers import Softmax, Permute, AveragePooling1D, Concatenate, dot, LeakyReLU
 
 class VGS:
     
@@ -77,11 +77,11 @@ class VGS:
         return speech_sequence , out_speech_channel , audio_model 
     
           
-    def build_audio_model (self , input_dim):
+    def build_CNN01_audio_model (self , input_dim):
         #Xshape = (1024,64)
         [Xshape, Yshape] = self.input_dim
         
-        dropout_size = 0.3
+        dropout_size = 0.1
         activation_C='relu'
     
         audio_sequence = Input(shape=Xshape)
@@ -109,7 +109,7 @@ class VGS:
         bn4 = BatchNormalization(axis=-1)(dr4) 
         pool4 = MaxPooling2D(4,strides = 2,padding='same')(bn4)
            
-        forward5 = Conv2D(256,7,padding="same",activation=activation_C,name = 'conv5')(pool4)
+        forward5 = Conv2D(128,7,padding="same",activation=activation_C,name = 'conv5')(pool4)
         dr5 = Dropout(dropout_size)(forward5)
         bn5 = BatchNormalization(axis=-1,name='audio_branch')(dr5) # (N,64,512)
         pool5 = MaxPooling2D(4,strides = 4,padding='same')(bn5)
@@ -118,9 +118,60 @@ class VGS:
         audio_model = Model(inputs= audio_sequence, outputs = out_audio_channel )
         
         return audio_sequence , out_audio_channel , audio_model
-    
+
+    def build_baseline_audio_model (self , input_dim):
+        #Xshape = (1024,64)
+        [Xshape, Yshape] = self.input_dim
         
-    def build_textual_model (self, input_dim):
+    
+        audio_sequence = Input(shape=Xshape)
+        audio_sequence_reshaped =  Reshape([audio_sequence.shape[1],audio_sequence.shape[2], 1 ])(audio_sequence) 
+        
+        # Conv2D block
+        bn = BatchNormalization(axis=-1)(audio_sequence_reshaped)
+        forward = Conv2D(32,3,padding="same")(bn)
+        act = LeakyReLU(alpha=0.1)(forward)     
+        
+        # pooling
+        pool = MaxPooling2D(4,strides = (2, 4), padding='same')(act)
+        
+        # Conv2D block
+        bn = BatchNormalization(axis=-1)(pool)
+        forward = Conv2D(128,3,padding="same")(bn)
+        act = LeakyReLU(alpha=0.1)(forward)
+        
+        # Conv2D block
+        bn = BatchNormalization(axis=-1)(act)
+        forward = Conv2D(128,3,padding="same")(bn)
+        act = LeakyReLU(alpha=0.1)(forward)
+        
+        # pooling
+        pool = MaxPooling2D(4,strides = (2, 4), padding='same')(act)
+        
+        # Conv2D block
+        bn = BatchNormalization(axis=-1)(pool)
+        forward = Conv2D(128,3,padding="same")(bn)
+        act = LeakyReLU(alpha=0.1)(forward)
+        
+        # Conv2D block
+        bn = BatchNormalization(axis=-1)(act)
+        forward = Conv2D(128,3,padding="same")(bn)
+        act = LeakyReLU(alpha=0.1)(forward)
+        
+        # pooling
+        pool = MaxPooling2D(4,strides = (1, 4), padding='same')(act)
+        
+        dr = Dropout(0.3)(pool)
+        
+        input_gru = Reshape([dr.shape[1], dr.shape[3]])(dr)
+        gru = Bidirectional (GRU (128, activation="tanh", return_sequences=True) ) (input_gru)
+        
+        out_audio_channel = gru
+        audio_model = Model(inputs= audio_sequence, outputs = out_audio_channel )
+        
+        return audio_sequence , out_audio_channel , audio_model    
+        
+    def build_baseline_textual_model (self, input_dim):
         # Yshape = (768)
         [Xshape, Yshape] = self.input_dim
         
@@ -214,20 +265,20 @@ class VGS:
     def CNN0 (self, input_dim):
     
         #input_dim = [(1024, 64), (1,768)]
-        audio_sequence , out_audio_channel , audio_model = self.build_audio_model ( input_dim)
-        textual_sequence , out_textual_channel , textual_model = self. build_textual_model ( input_dim)  
+        audio_sequence , out_audio_channel , audio_model = self.build_baseline_audio_model  ( input_dim)
+        textual_sequence , out_textual_channel , textual_model = self. build_baseline_textual_model ( input_dim)  
         
         
-        T =  out_textual_channel #AveragePooling1D(64,padding='same') (out_textual_channel)
+        T_e =  out_textual_channel #AveragePooling1D(64,padding='same') (out_textual_channel)
         #T = Reshape([out_textual_channel.shape[2]])(T) # (N, 512)
         
-        A = AveragePooling1D(64,padding='same') (out_audio_channel)
-        A = Reshape([out_audio_channel.shape[2]])(A) # (N, 512)
-         
-        A_e = Dense(512,activation='linear',name='dense_audio')(A)       
+        A_e = out_audio_channel
+        A_e = AveragePooling1D(256,padding='same') (A_e)
+        A_e = Reshape([A_e.shape[2]])(A_e) # (N, 512)   
+        #A_e = Dense(512,activation='linear',name='dense_audio')(A_e)       
         A_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_audio')(A_e)
         
-        T_e = Dense(512,activation='linear',name='dense_textual')(T) 
+        T_e = Dense(256,activation='linear',name='dense_textual')(T_e) 
         T_e = Lambda(lambda  x: K.l2_normalize(x,axis=-1),name='out_textual')(T_e)
         
         textual_embedding_model = Model(inputs=textual_sequence, outputs = T_e, name='textual_embedding_model')

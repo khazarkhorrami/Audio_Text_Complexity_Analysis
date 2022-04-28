@@ -153,7 +153,7 @@ class train_validate (VGS):
             if self.loss == "Triplet":                   
                 Yin, Xin, bin_target = prepare_triplet_data (Ydata, Xdata)
                     
-            history = self.vgs_model.fit([Yin, Xin ], bin_target, shuffle=False, epochs=1,batch_size=30)                      
+            history = self.vgs_model.fit([Yin, Xin ], bin_target, shuffle=False, epochs=1,batch_size=96)                      
             del Yin, Xin, Ydata, Xdata
             training_output = history.history['loss'][0]
         return training_output
@@ -175,7 +175,7 @@ class train_validate (VGS):
             if self.loss == "Triplet":                   
                 Yin, Xin, bin_target = prepare_triplet_data (Ydata, Xdata)
                 
-            loss = self.vgs_model.evaluate([Yin, Xin ], bin_target, batch_size=30) 
+            loss = self.vgs_model.evaluate([Yin, Xin ], bin_target, batch_size=96) 
             epoch_cum_val += loss
             #............................................................. Recall
             if self.find_recall:
@@ -262,9 +262,9 @@ class train_validate (VGS):
     def define_and_compile_models (self):
         self.vgs_model, self.visual_embedding_model, self.audio_embedding_model = self.build_model(self.model_name, self.input_dim)
         if self.loss == "MMS":
-            self.vgs_model.compile(loss=mms_loss, optimizer= keras.optimizers.Adam(lr=1e-04))
+            self.vgs_model.compile(loss=mms_loss, optimizer= keras.optimizers.Adam(lr=1e-03))
         elif self.loss == "Triplet":
-            self.vgs_model.compile(loss=triplet_loss, optimizer= keras.optimizers.Adam(lr=1e-04))
+            self.vgs_model.compile(loss=triplet_loss, optimizer= keras.optimizers.Adam(lr=1e-03))
         print(self.vgs_model.summary())
         
     def __call__(self):
