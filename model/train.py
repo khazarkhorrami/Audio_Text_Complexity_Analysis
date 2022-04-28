@@ -262,9 +262,9 @@ class train_validate (VGS):
     def define_and_compile_models (self):
         self.vgs_model, self.visual_embedding_model, self.audio_embedding_model = self.build_model(self.model_name, self.input_dim)
         if self.loss == "MMS":
-            self.vgs_model.compile(loss=mms_loss, optimizer= keras.optimizers.Adam(lr=1e-03))
+            self.vgs_model.compile(loss=mms_loss, optimizer= keras.optimizers.Adam(lr=1e-04))
         elif self.loss == "Triplet":
-            self.vgs_model.compile(loss=triplet_loss, optimizer= keras.optimizers.Adam(lr=1e-03))
+            self.vgs_model.compile(loss=triplet_loss, optimizer= keras.optimizers.Adam(lr=1e-04))
         print(self.vgs_model.summary())
         
     def __call__(self):
