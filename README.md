@@ -1,6 +1,8 @@
 # DCASE2022-task6b
 
-This repository is configured to replicate the baseline results for DCASE 2022 Challenge Task 6b using a TensorFlow implementation.
+This repository contains code used to analyse correlation between Text/Audio complexity measures and human/machine ratings of audio-text correspondences.
+
+The model is a Keras implemention of audio_to_text retrieval model to replicate the baseline results for DCASE 2022 Challenge Task 6b using a TensorFlow implementation.
 
 The baseline system of the task is originally implemented in the following repository: 
 
