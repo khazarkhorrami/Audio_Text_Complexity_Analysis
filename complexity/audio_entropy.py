@@ -137,7 +137,7 @@ for afid, split in dict_unique_audio_fids_split.items():
 
 #%%
 
-file_json = "/worktmp2/hxkhkh/current/Dcase/data/entropy/Aentropy_fid.json"
+file_json = "/worktmp2/hxkhkh/current/Dcase/data/entropy/Aentropy.json"
 with open(file_json, "w") as fp:
     json.dump(dict_fid_to_h, fp)
 

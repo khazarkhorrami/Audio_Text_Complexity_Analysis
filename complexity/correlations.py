@@ -125,7 +125,7 @@ for split in splits:
         print(TN_fid, cosines[TN_fid])       
         for fid in C15_fids:     
             print(fid, cosines[fid])
-kh
+
 #%% AUDIO COMPLEXITY CORRELATIONS
 
 
@@ -164,9 +164,10 @@ for afid, vdict in dict_fid_to_h.items():
 corr_h_cos = stats.pearsonr(h_all, cos_all)
 
 # printing the results
+print( "###### Audio correlatons ######")
 print(corr_h_rat)
 print(corr_h_cos)
-kh
+
 #%% TEXT COMPLEXITY CORRELATIONS
 
 
@@ -181,7 +182,7 @@ for tid_measure, vp in dict_tid_to_p.items():
     adjs_counts = dict_tid_to_p [tid_measure]['adjs_counts']
     count_fr_ws = dict_tid_to_p [tid_measure]['count_fr_ws']
     count_fr_ns = dict_tid_to_p [tid_measure]['count_fr_ns']
-    p_measure = count_fr_ns
+    p_measure = ws_counts
     for p , r in dict_pairs_to_ratings_TP.items():
         (tid, fid) = p
         if tid_measure == tid:
@@ -201,7 +202,7 @@ for tid_measure, vp in dict_tid_to_p.items():
     adjs_counts = dict_tid_to_p [tid_measure]['adjs_counts']
     count_fr_ws = dict_tid_to_p [tid_measure]['count_fr_ws']
     count_fr_ns = dict_tid_to_p [tid_measure]['count_fr_ns']
-    p_measure = count_fr_ns   
+    p_measure = ws_counts   
     for p , cos in dict_pairs_to_cosines_TP.items():
         (tid, fid) = p
         if tid_measure == tid:
@@ -210,6 +211,43 @@ for tid_measure, vp in dict_tid_to_p.items():
 
 # correlations   
 corr_p_cos = stats.pearsonr(p_all, cos_all)
-
+print( "###### Text correlatons ######")
 print(corr_p_rat)
 print(corr_p_cos)
+
+#%% set X, Y for linear regressor
+  
+h_all = []
+p_all = []
+r_all = []
+for item_pair, item_rate in dict_pairs_to_ratings.items():
+    (tid, fid) = item_pair
+    print(fid in dict_fid_to_h)
+    if fid in dict_fid_to_h:
+        h_classes = dict_fid_to_h [fid]['h_class']
+        ws_counts = dict_tid_to_p [tid]['ws_counts']
+        h = h_classes
+        p = ws_counts
+        r = item_rate
+        h_all.append(h)
+        p_all.append(p)
+        r_all.append(r)
+
+x = np.array([h_all, p_all])
+y = np.array([r_all])
+X=x.T
+Y=y.T
+
+#%%
+#predict the human rating (Y) based on a text and audio complexity index (X1,X2)
+from sklearn import linear_model 
+
+regr = linear_model.LinearRegression()
+regr.fit(X,Y)
+print(regr.coef_)
+print(regr.intercept_)
+
+# example point
+X_ex = np.array([[0.9, 24]])
+r_predicted = regr.predict(X)
+print(r_predicted)
