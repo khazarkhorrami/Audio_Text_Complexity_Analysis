@@ -1,12 +1,11 @@
+from sklearn.linear_model import Ridge
 import numpy as np
 import os
 import pandas as pd
-import librosa
-import panns_inference
-from panns_inference import AudioTagging, SoundEventDetection, labels
-import csv
 import json
 from scipy import stats
+from sklearn import linear_model 
+
 #%%
 audio_path = '/worktmp2/hxkhkh/current/Dcase/data/clotho/audio/' 
 root = "/worktmp2/hxkhkh/current/Dcase/retrieval-relevance-crowdsourcing/data"
@@ -214,7 +213,7 @@ corr_p_cos = stats.pearsonr(p_all, cos_all)
 print( "###### Text correlatons ######")
 print(corr_p_rat)
 print(corr_p_cos)
-
+# plot only correlations TP
 #%% set X, Y for linear regressor
   
 h_all = []
@@ -222,7 +221,6 @@ p_all = []
 r_all = []
 for item_pair, item_rate in dict_pairs_to_ratings.items():
     (tid, fid) = item_pair
-    print(fid in dict_fid_to_h)
     if fid in dict_fid_to_h:
         h_classes = dict_fid_to_h [fid]['h_class']
         ws_counts = dict_tid_to_p [tid]['ws_counts']
@@ -234,20 +232,34 @@ for item_pair, item_rate in dict_pairs_to_ratings.items():
         r_all.append(r)
 
 x = np.array([h_all, p_all])
-y = np.array([r_all])
-X=x.T
-Y=y.T
+y = np.array([r_all] , dtype = 'float')
+X = x.T
+Y = y.T
+#np.random.shuffle(Y) ... > 26.3
+# set chance level by suffling and measure error (MSE)
+# correlation between them(Y, Y_pred), spearman, Y is fused variable
 
-#%%
+#%% SVM, KNN
 #predict the human rating (Y) based on a text and audio complexity index (X1,X2)
-from sklearn import linear_model 
-
 regr = linear_model.LinearRegression()
 regr.fit(X,Y)
-print(regr.coef_)
-print(regr.intercept_)
+Y_predicted = regr.predict(X)
+MSE =  np.mean ( (np.sqrt((Y- Y_predicted)**2) ))
+print(MSE)
 
-# example point
-X_ex = np.array([[0.9, 24]])
-r_predicted = regr.predict(X)
-print(r_predicted)
+res = stats.pearsonr(np.squeeze(Y), np.squeeze(Y_predicted))
+print(res)
+res = stats.spearmanr(Y, Y_predicted)
+print(res)
+
+#%%
+clf = Ridge(alpha=1.0)
+clf.fit(X, Y)
+Y_predicted = clf.predict(X)
+MSE = np.mean((np.sqrt((Y - Y_predicted)**2)))
+print(MSE)  
+
+res = stats.pearsonr(np.squeeze(Y), np.squeeze(Y_predicted))
+print(res)
+res = stats.spearmanr(Y, Y_predicted)
+print(res)
