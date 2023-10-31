@@ -30,8 +30,8 @@ def p_words(caption):
     adjs = detect_adjectives (caption)
     adjs_counts = len(adjs)
     # number of frequent words
-    count_fr_ws, count_fr_ns, count_fr_adjs = p2(caption)
-    return ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws, count_fr_ns, count_fr_adjs
+    count_fr_ws, count_fr_cws, count_fr_ns, count_fr_adjs = p2(caption)
+    return ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws, count_fr_cws, count_fr_ns, count_fr_adjs
 
 def get_content_words(caption):
     ws = word_tokenize(caption)
@@ -119,14 +119,25 @@ for f in files:
 #%%
 dict_word_counts = {}
 for tid, caption in dict_tid_to_caption.items():
-    cws = get_content_words (caption)
-    for item in cws:
+    ws = word_tokenize(caption)
+    for item in ws:
         if item in dict_word_counts:
             dict_word_counts[item] +=1
         else:
             dict_word_counts[item] = 1
             
 word_counts_sorted = sorted(dict_word_counts.items(), key=lambda x:x[1], reverse=True )
+
+dict_cword_counts = {}
+for tid, caption in dict_tid_to_caption.items():
+    cws = get_content_words (caption)
+    for item in cws:
+        if item in dict_cword_counts:
+            dict_cword_counts[item] +=1
+        else:
+            dict_cword_counts[item] = 1
+            
+cword_counts_sorted = sorted(dict_cword_counts.items(), key=lambda x:x[1], reverse=True )
 
 
 dict_noun_counts = {}
@@ -155,12 +166,17 @@ adj_counts_sorted = sorted(dict_adj_counts.items(), key=lambda x:x[1], reverse=T
 # select_most_frequent_cws
 m = 500
 freq_words_and_counts =  word_counts_sorted [0:m]
+freq_cwords_and_counts =  cword_counts_sorted [0:m]
 freq_nouns_and_counts =  noun_counts_sorted [0:m]
 freq_adjs_and_counts =  adj_counts_sorted [0:m]
 
 dict_frequent_words = {}
 for item in freq_words_and_counts:
-    dict_frequent_words[item[0]] = item[1]  
+    dict_frequent_words[item[0]] = item[1] 
+    
+dict_frequent_cwords = {}
+for item in freq_cwords_and_counts:
+    dict_frequent_cwords[item[0]] = item[1]  
 
 dict_frequents_nouns = {}
 for item in freq_nouns_and_counts:
@@ -173,27 +189,31 @@ for item in freq_nouns_and_counts:
 def p2(caption):
     cws = get_content_words(caption)
     count_fr_ws = 0
+    count_fr_cws = 0
     count_fr_ns = 0
     count_fr_adjs = 0
     for w in cws:
         if w in dict_frequent_words:
             count_fr_ws +=1
+        if w in dict_frequent_cwords:
+            count_fr_cws +=1
         if w in dict_frequents_nouns:
             count_fr_ns +=1
         if w in dict_frequents_adjs:
             count_fr_adjs +=1
-    return count_fr_ws, count_fr_ns, count_fr_adjs
+    return count_fr_ws, count_fr_cws, count_fr_ns, count_fr_adjs
 #%%
 dict_tid_to_p = {}
 for tid in dict_unique_text_tids:
     caption = dict_tid_to_caption [tid]
-    ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws, count_fr_ns, count_fr_adjs = p_words(caption)
+    ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws,count_fr_cws, count_fr_ns, count_fr_adjs = p_words(caption)
     dict_tid_to_p [tid] = {}
     dict_tid_to_p [tid]['ws_counts'] = ws_counts
     dict_tid_to_p [tid]['cws_counts'] = cws_counts
     dict_tid_to_p [tid]['nouns_counts'] = nouns_counts
     dict_tid_to_p [tid]['adjs_counts'] = adjs_counts
     dict_tid_to_p [tid]['count_fr_ws'] = count_fr_ws
+    dict_tid_to_p [tid]['count_fr_cws'] = count_fr_cws
     dict_tid_to_p [tid]['count_fr_ns'] = count_fr_ns
     dict_tid_to_p [tid]['count_fr_adjs'] = count_fr_adjs
     

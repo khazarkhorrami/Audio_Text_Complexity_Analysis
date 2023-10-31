@@ -5,7 +5,7 @@ import pandas as pd
 import json
 from scipy import stats
 from sklearn import linear_model 
-
+from matplotlib import pyplot as plt
 #%%
 audio_path = '/worktmp2/hxkhkh/current/Dcase/data/clotho/audio/' 
 root = "/worktmp2/hxkhkh/current/Dcase/retrieval-relevance-crowdsourcing/data"
@@ -135,11 +135,11 @@ r_all = []
 for afid, vdict in dict_fid_to_h.items():
     h_classes = dict_fid_to_h [afid]['h_class']
     h_time = dict_fid_to_h [afid]['h_time']
-    
+    h = h_classes
     for p , r in dict_pairs_to_ratings_TP.items():
         (tid, fid) = p
         if afid == fid:
-            h_all.append(h_classes)
+            h_all.append(h)
             r_all.append(r)
 
 # correlations   
@@ -152,11 +152,11 @@ cos_all = []
 for afid, vdict in dict_fid_to_h.items():
     h_classes = dict_fid_to_h [afid]['h_class']
     h_time = dict_fid_to_h [afid]['h_time']
-    
+    h = h_classes
     for p , cos in dict_pairs_to_cosines_TP.items():
         (tid, fid) = p
         if afid == fid:
-            h_all.append(h_classes)
+            h_all.append(h)
             cos_all.append(cos)
 
 # correlations    
@@ -164,13 +164,32 @@ corr_h_cos = stats.pearsonr(h_all, cos_all)
 
 # printing the results
 print( "###### Audio correlatons ######")
-print(corr_h_rat)
-print(corr_h_cos)
+print('(' , round(corr_h_rat[0],5), ',' ,round(corr_h_rat[1],3) , ')' )
+print('(' ,round(corr_h_cos[0],5), ', ' , round(corr_h_cos[1],3), ')')
+#%% plot only correlations TP
+plt.figure(figsize =(8, 12))
+plt.suptitle('Correlations for TP pairs', fontsize = 20)
+plt.subplot(2,1,1)
+plt.ylabel('Entropy over classes', fontsize = 16)
+plt.xlabel('Human rating', fontsize = 16)
+plt.scatter(r_all, h_all, label = '(' + str(round(corr_h_rat[0],5) ) + ',' + str(round(corr_h_rat[1],3)) + ')' )
+plt.ylim(0,1)
+plt.xlim(0,100)
+plt.grid()
+plt.legend(fontsize = 16)
 
+plt.subplot(2,1,2)
+plt.ylabel('Entropy over classes', fontsize = 16)
+plt.xlabel('Machine rating', fontsize = 16)
+plt.scatter(cos_all, h_all, label = '(' + str(round(corr_h_cos[0],5) ) + ',' + str(round(corr_h_cos[1],3)) + ')')
+plt.ylim(0,1)
+plt.xlim(0,1)
+plt.grid()
+plt.legend(fontsize = 16)
+pname = 'audio_h_TP.png'
+
+plt.savefig('/worktmp2/hxkhkh/current/Dcase/docs/correlations/' + pname ,  format = 'png' , bbox_inches='tight')
 #%% TEXT COMPLEXITY CORRELATIONS
-
-
-
 # mapping entropy to human ratings    
 p_all = []
 r_all = []
@@ -180,10 +199,11 @@ for tid_measure, vp in dict_tid_to_p.items():
     nouns_counts = dict_tid_to_p [tid_measure]['nouns_counts']
     adjs_counts = dict_tid_to_p [tid_measure]['adjs_counts']
     count_fr_ws = dict_tid_to_p [tid_measure]['count_fr_ws']
+    count_fr_cws = dict_tid_to_p [tid_measure]['count_fr_cws']
     count_fr_ns = dict_tid_to_p [tid_measure]['count_fr_ns']
     count_fr_adjs = dict_tid_to_p [tid_measure]['count_fr_adjs']
     # select which feature is p
-    p_measure = count_fr_ws
+    p_measure = ws_counts
     for p , r in dict_pairs_to_ratings_TP.items():
         (tid, fid) = p
         if tid_measure == tid:
@@ -202,10 +222,11 @@ for tid_measure, vp in dict_tid_to_p.items():
     nouns_counts = dict_tid_to_p [tid_measure]['nouns_counts']
     adjs_counts = dict_tid_to_p [tid_measure]['adjs_counts']
     count_fr_ws = dict_tid_to_p [tid_measure]['count_fr_ws']
+    count_fr_cws = dict_tid_to_p [tid_measure]['count_fr_cws']
     count_fr_ns = dict_tid_to_p [tid_measure]['count_fr_ns']
     count_fr_adjs = dict_tid_to_p [tid_measure]['count_fr_adjs']
     # select which feature is p
-    p_measure = count_fr_ws  
+    p_measure = ws_counts 
     for p , cos in dict_pairs_to_cosines_TP.items():
         (tid, fid) = p
         if tid_measure == tid:
@@ -215,9 +236,32 @@ for tid_measure, vp in dict_tid_to_p.items():
 # correlations   
 corr_p_cos = stats.pearsonr(p_all, cos_all)
 print( "###### Text correlatons ######")
-print(corr_p_rat)
-print(corr_p_cos)
-# plot only correlations TP
+print('(' , round(corr_p_rat[0],3), ',' ,round(corr_p_rat[1],3) , ')' )
+print('(' ,round(corr_p_cos[0],3), ', ' , round(corr_p_cos[1],3), ')')
+#%% plot only correlations TP
+plt.figure(figsize =(8, 12))
+plt.suptitle('Correlations for TP pairs', fontsize = 20)
+plt.subplot(2,1,1)
+plt.ylabel('Number of words', fontsize = 16)
+plt.xlabel('Human rating', fontsize = 16)
+plt.scatter(r_all, p_all, label = '(' + str(round(corr_p_rat[0],5) ) + ',' + str(round(corr_p_rat[1],3)) + ')' )
+
+plt.xlim(0,100)
+plt.grid()
+plt.legend(fontsize = 16)
+
+plt.subplot(2,1,2)
+plt.ylabel('Number of words', fontsize = 16)
+plt.xlabel('Machine rating', fontsize = 16)
+plt.scatter(cos_all, p_all, label = '(' + str(round(corr_p_cos[0],5) ) + ',' + str(round(corr_p_cos[1],3)) + ')')
+
+plt.xlim(0,1)
+plt.grid()
+plt.legend(fontsize = 16)
+pname = 'audio_p_TP.png'
+
+plt.savefig('/worktmp2/hxkhkh/current/Dcase/docs/correlations/' + pname ,  format = 'png' , bbox_inches='tight')
+
 #%% set X, Y for linear regressor
   
 h_all = []
