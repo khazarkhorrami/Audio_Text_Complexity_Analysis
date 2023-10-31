@@ -120,10 +120,10 @@ for split in splits:
             else:
                 dict_pairs_to_cosines_C15[(tid, k)] = v
                 
-        print(TP_fid, cosines[TP_fid])
-        print(TN_fid, cosines[TN_fid])       
-        for fid in C15_fids:     
-            print(fid, cosines[fid])
+        # print(TP_fid, cosines[TP_fid])
+        # print(TN_fid, cosines[TN_fid])       
+        # for fid in C15_fids:     
+        #     print(fid, cosines[fid])
 
 #%% AUDIO COMPLEXITY CORRELATIONS
 
@@ -181,7 +181,9 @@ for tid_measure, vp in dict_tid_to_p.items():
     adjs_counts = dict_tid_to_p [tid_measure]['adjs_counts']
     count_fr_ws = dict_tid_to_p [tid_measure]['count_fr_ws']
     count_fr_ns = dict_tid_to_p [tid_measure]['count_fr_ns']
-    p_measure = ws_counts
+    count_fr_adjs = dict_tid_to_p [tid_measure]['count_fr_adjs']
+    # select which feature is p
+    p_measure = count_fr_ws
     for p , r in dict_pairs_to_ratings_TP.items():
         (tid, fid) = p
         if tid_measure == tid:
@@ -201,7 +203,9 @@ for tid_measure, vp in dict_tid_to_p.items():
     adjs_counts = dict_tid_to_p [tid_measure]['adjs_counts']
     count_fr_ws = dict_tid_to_p [tid_measure]['count_fr_ws']
     count_fr_ns = dict_tid_to_p [tid_measure]['count_fr_ns']
-    p_measure = ws_counts   
+    count_fr_adjs = dict_tid_to_p [tid_measure]['count_fr_adjs']
+    # select which feature is p
+    p_measure = count_fr_ws  
     for p , cos in dict_pairs_to_cosines_TP.items():
         (tid, fid) = p
         if tid_measure == tid:
