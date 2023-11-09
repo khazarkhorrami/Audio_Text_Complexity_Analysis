@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from ast import literal_eval
 root = "/worktmp2/hxkhkh/current/Dcase/retrieval-relevance-crowdsourcing/data"
 
 p_audio_meta = os.path.join(root, "audio_metadata")
@@ -44,6 +45,9 @@ files = os.listdir(path)
 dict_unique_audio_fids = {}
 dict_unique_text_tids = {}
 dict_pairs_to_ratings = {}
+dict_pairs_to_ratings_TP = {}
+dict_pairs_to_ratings_TN = {}
+dict_pairs_to_ratings_C15 = {}
 for f in files:
     file = os.path.join(path,f)
     df = pd.read_csv(file, sep=',') 
@@ -53,8 +57,15 @@ for f in files:
         fid_row = row['fid']
         tid_row = row['tid']
         rating_row = row['rating']
+        g_row = row['fid_group']
         dict_pairs_to_ratings[(tid_row, fid_row)] = rating_row
-        
+        if g_row == 'TP':
+            dict_pairs_to_ratings_TP[(tid_row, fid_row)] = rating_row
+        elif g_row == 'TN':
+            dict_pairs_to_ratings_TN[(tid_row, fid_row)] = rating_row
+        elif g_row == 'C15':
+            dict_pairs_to_ratings_C15[(tid_row, fid_row)] = rating_row
+            
         if fid_row in dict_unique_audio_fids:
             dict_unique_audio_fids[fid_row] += 1
         else:
@@ -64,9 +75,10 @@ for f in files:
             dict_unique_text_tids[tid_row] += 1
         else:
             dict_unique_text_tids[tid_row] = 1
-            
+
+        
 #%% reading q cosine
-from ast import literal_eval
+
 path = p_q_cosine
 files = os.listdir(path)
 dict_pairs_to_cosines = {}
@@ -104,14 +116,33 @@ for f in files:
 #%% reading text
 path = p_text
 files = os.listdir(path)
-
+dict_tid_to_text = {}
 for f in files:
     file = os.path.join(path,f)
     df = pd.read_csv(file, sep=',') 
     print (len (df))
     for row_ind in range(len(df)):
         row = df.iloc[row_ind]
-kh        
+        dict_tid_to_text [row['tid']] = row['text']
+#%%
+audio_root = '/worktmp2/hxkhkh/current/Dcase/data/clotho/audio'
+# prepare examples:
+for pair,r in dict_pairs_to_ratings_TN.items():
+    if r >10:
+        (tid, fid) = pair
+        print(tid, fid, r)
+        cap = dict_tid_to_text [tid]
+        print(cap)
+        if fid in data_audio ['clotho_development']:
+            s = 'clotho_development'
+        elif fid in data_audio ['clotho_evaluation']:
+            s = 'clotho_evaluation'
+        elif fid in data_audio ['clotho_validation']:
+            s = 'clotho_validation'
+       
+        aud = os.path.join (s, dic_audio_file_id_to_name [fid] )
+        print (aud)
+        print ('#...........................................................#')
 #%% testing correlations
 rs = []
 cs = []

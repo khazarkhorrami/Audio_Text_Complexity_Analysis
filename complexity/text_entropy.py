@@ -3,9 +3,6 @@ import os
 import pandas as pd
 from nltk.tokenize import word_tokenize
 import nltk
-import panns_inference
-from panns_inference import AudioTagging, SoundEventDetection, labels
-import csv
 import json
 
 #p: a measure of text complexity
@@ -14,6 +11,24 @@ p_r = os.path.join(root, "relevance_data")
 p_text = os.path.join(root, "text_data")
 
 #%%
+import evaluate  # module from huggingface
+import torch
+device = 'cpu'
+
+model_nlp = 'gpt2'  # default HF model to be used.
+perplexity = evaluate.load("perplexity", module_type="metric")
+
+
+# text = ['I am here']#, 'I are here', 'I is here', 'you and I am here', 'you and I are here', 'you and I is here']
+# result = perplexity.compute(predictions=text, model_id=model_nlp, device=device)
+# print(result)
+
+#%%
+
+def p3 (caption):
+    result = perplexity.compute(predictions= [caption], model_id=model_nlp, device=device)
+    return result['mean_perplexity']
+
 def p_words(caption):
     # number of words
     ws = word_tokenize(caption)
@@ -31,7 +46,8 @@ def p_words(caption):
     adjs_counts = len(adjs)
     # number of frequent words
     count_fr_ws, count_fr_cws, count_fr_ns, count_fr_adjs = p2(caption)
-    return ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws, count_fr_cws, count_fr_ns, count_fr_adjs
+    perp = p3 (caption)
+    return ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws, count_fr_cws, count_fr_ns, count_fr_adjs, perp
 
 def get_content_words(caption):
     ws = word_tokenize(caption)
@@ -206,7 +222,7 @@ def p2(caption):
 dict_tid_to_p = {}
 for tid in dict_unique_text_tids:
     caption = dict_tid_to_caption [tid]
-    ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws,count_fr_cws, count_fr_ns, count_fr_adjs = p_words(caption)
+    ws_counts, cws_counts, nouns_counts, adjs_counts, count_fr_ws,count_fr_cws, count_fr_ns, count_fr_adjs, perp = p_words(caption)
     dict_tid_to_p [tid] = {}
     dict_tid_to_p [tid]['ws_counts'] = ws_counts
     dict_tid_to_p [tid]['cws_counts'] = cws_counts
@@ -216,6 +232,7 @@ for tid in dict_unique_text_tids:
     dict_tid_to_p [tid]['count_fr_cws'] = count_fr_cws
     dict_tid_to_p [tid]['count_fr_ns'] = count_fr_ns
     dict_tid_to_p [tid]['count_fr_adjs'] = count_fr_adjs
+    dict_tid_to_p [tid]['perp'] = perp
     
 #%%
 

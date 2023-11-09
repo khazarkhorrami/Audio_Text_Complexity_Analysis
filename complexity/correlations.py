@@ -127,7 +127,7 @@ for split in splits:
 
 #%% AUDIO COMPLEXITY CORRELATIONS
 
-
+kh
     
 # mapping entropy to human ratings    
 h_all = []
@@ -170,24 +170,35 @@ print('(' ,round(corr_h_cos[0],5), ', ' , round(corr_h_cos[1],3), ')')
 plt.figure(figsize =(8, 12))
 plt.suptitle('Correlations for TP pairs', fontsize = 20)
 plt.subplot(2,1,1)
-plt.ylabel('Entropy over classes', fontsize = 16)
-plt.xlabel('Human rating', fontsize = 16)
-plt.scatter(r_all, h_all, label = '(' + str(round(corr_h_rat[0],5) ) + ',' + str(round(corr_h_rat[1],3)) + ')' )
+plt.ylabel('Entropy over classes', fontsize = 18)
+plt.xlabel('Human rating', fontsize = 18)
+plt.scatter(r_all, h_all, label =  str(round(corr_h_rat[0],3) ) + ', p < 0.05' )
+par = np.polyfit(r_all, h_all, 1, full=True)
+slope=par[0][0]
+intercept=par[0][1]
+xl = [min(r_all), max(r_all)]
+yl = [slope*xx + intercept  for xx in xl]
+plt.plot(xl, yl, c ='r')
 plt.ylim(0,1)
 plt.xlim(0,100)
 plt.grid()
 plt.legend(fontsize = 16)
 
 plt.subplot(2,1,2)
-plt.ylabel('Entropy over classes', fontsize = 16)
-plt.xlabel('Machine rating', fontsize = 16)
-plt.scatter(cos_all, h_all, label = '(' + str(round(corr_h_cos[0],5) ) + ',' + str(round(corr_h_cos[1],3)) + ')')
+plt.ylabel('Entropy over classes', fontsize = 18)
+plt.xlabel('Machine rating', fontsize = 18)
+plt.scatter(cos_all, h_all, label = str(round(corr_h_cos[0],3) ) + ', p < 0.05' )
+par = np.polyfit(cos_all, h_all, 1, full=True)
+slope=par[0][0]
+intercept=par[0][1]
+xl = [min(cos_all), max(cos_all)]
+yl = [slope*xx + intercept  for xx in xl]
+plt.plot(xl, yl, c ='r')
 plt.ylim(0,1)
 plt.xlim(0,1)
 plt.grid()
 plt.legend(fontsize = 16)
 pname = 'audio_h_TP.png'
-
 plt.savefig('/worktmp2/hxkhkh/current/Dcase/docs/correlations/' + pname ,  format = 'png' , bbox_inches='tight')
 #%% TEXT COMPLEXITY CORRELATIONS
 # mapping entropy to human ratings    
@@ -242,23 +253,33 @@ print('(' ,round(corr_p_cos[0],3), ', ' , round(corr_p_cos[1],3), ')')
 plt.figure(figsize =(8, 12))
 plt.suptitle('Correlations for TP pairs', fontsize = 20)
 plt.subplot(2,1,1)
-plt.ylabel('Number of words', fontsize = 16)
-plt.xlabel('Human rating', fontsize = 16)
-plt.scatter(r_all, p_all, label = '(' + str(round(corr_p_rat[0],5) ) + ',' + str(round(corr_p_rat[1],3)) + ')' )
-
+plt.ylabel('Number of words', fontsize = 18)
+plt.xlabel('Human rating', fontsize = 18)
+plt.scatter(r_all, p_all, label = str(round(corr_p_rat[0],3) ) + ', p < 0.05' )
+par = np.polyfit(r_all, p_all, 1, full=True)
+slope=par[0][0]
+intercept=par[0][1]
+xl = [min(r_all), max(r_all)]
+yl = [slope*xx + intercept  for xx in xl]
+plt.plot(xl, yl, c ='r')
 plt.xlim(0,100)
 plt.grid()
 plt.legend(fontsize = 16)
 
 plt.subplot(2,1,2)
-plt.ylabel('Number of words', fontsize = 16)
-plt.xlabel('Machine rating', fontsize = 16)
-plt.scatter(cos_all, p_all, label = '(' + str(round(corr_p_cos[0],5) ) + ',' + str(round(corr_p_cos[1],3)) + ')')
-
+plt.ylabel('Number of words', fontsize = 18)
+plt.xlabel('Machine rating', fontsize = 18)
+plt.scatter(cos_all, p_all, label = 'n.s.')
+par = np.polyfit(cos_all, p_all, 1, full=True)
+slope=par[0][0]
+intercept=par[0][1]
+xl = [min(cos_all), max(cos_all)]
+yl = [slope*xx + intercept  for xx in xl]
+plt.plot(xl, yl, c ='r')
 plt.xlim(0,1)
 plt.grid()
 plt.legend(fontsize = 16)
-pname = 'audio_p_TP.png'
+pname = 'text_p_TP.png'
 
 plt.savefig('/worktmp2/hxkhkh/current/Dcase/docs/correlations/' + pname ,  format = 'png' , bbox_inches='tight')
 
