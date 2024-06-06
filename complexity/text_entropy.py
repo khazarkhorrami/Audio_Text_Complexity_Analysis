@@ -18,7 +18,6 @@ device = 'cpu'
 model_nlp = 'gpt2'  # default HF model to be used.
 perplexity = evaluate.load("perplexity", module_type="metric")
 
-
 # text = ['I am here']#, 'I are here', 'I is here', 'you and I am here', 'you and I are here', 'you and I is here']
 # result = perplexity.compute(predictions=text, model_id=model_nlp, device=device)
 # print(result)

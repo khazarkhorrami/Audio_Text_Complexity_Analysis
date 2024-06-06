@@ -116,7 +116,23 @@ for split in splits:
             dict_unique_text_tids[tid_row] += 1
         else:
             dict_unique_text_tids[tid_row] = 1
+
+#%% at: audio duration
+dict_fid_to_dur = {}
+for afid, split in dict_unique_audio_fids_split.items():
+    aname = dic_audio_file_id_to_name [afid]
+  
+    af = os.path.join(audio_path, split, aname)
+    (audio, _) = librosa.core.load(af, sr=32000, mono=True)
+    dict_fid_to_dur [afid] = round( len(audio) / 3200, 1)
+    
+file_json = "/worktmp2/hxkhkh/current/Dcase/data/entropy/Adur.json"
+with open(file_json, "w") as fp:
+    json.dump(dict_fid_to_dur, fp)
+    
+
 #%%
+kh
 dict_fid_to_h = {}
 for afid, split in dict_unique_audio_fids_split.items():
     aname = dic_audio_file_id_to_name [afid]
@@ -135,7 +151,6 @@ for afid, split in dict_unique_audio_fids_split.items():
     except: 
         pass
 
-#%%
 
 file_json = "/worktmp2/hxkhkh/current/Dcase/data/entropy/Aentropy.json"
 with open(file_json, "w") as fp:
@@ -144,3 +159,6 @@ with open(file_json, "w") as fp:
 # with open(file_json, "r") as fp:
 #     dtest = json.load(fp)
     
+
+#%%
+
