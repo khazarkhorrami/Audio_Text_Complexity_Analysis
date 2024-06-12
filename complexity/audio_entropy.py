@@ -20,6 +20,7 @@ sed = SoundEventDetection(
     device=device, 
     interpolate_mode='nearest')
 
+
 #%%
 
 def calculate_entropy (framewise_output):
@@ -132,7 +133,7 @@ with open(file_json, "w") as fp:
     
 
 #%%
-kh
+
 dict_fid_to_h = {}
 for afid, split in dict_unique_audio_fids_split.items():
     aname = dic_audio_file_id_to_name [afid]
@@ -142,7 +143,7 @@ for afid, split in dict_unique_audio_fids_split.items():
     audio = audio[None, :]  # (batch_size, segment_samples)
     try:
         framewise_output = sed.inference(audio)
-        """(batch_size, time_steps, classes_num)"""    
+        """(batch_size, time_steps, classes_num), class_num = 527 """    
         fo = framewise_output[0]
         h_classes, h_time = calculate_entropy (fo)
         dict_fid_to_h [afid] = {}
